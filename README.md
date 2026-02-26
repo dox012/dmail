@@ -37,8 +37,9 @@ serve [sec]   进入自动轮询模式
 
 ```json
 {
-  "email": "你的QQ邮箱",
-  "auth_code": "QQ邮箱授权码",
+  "agent_email": "agent的QQ邮箱",
+  "agent_auth_code": "agent邮箱授权码",
+  "user_email": "你的邮箱",
   "agent_cmd": "claude -p \"{prompt}\""
 }
 ```

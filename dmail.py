@@ -21,8 +21,9 @@ def load_cfg():
     print("=== dmail 首次配置 ===")
     print("授权码获取: QQ邮箱 → 设置 → 账户 → 开启IMAP/SMTP服务 → 生成授权码\n")
     cfg = {
-        "email": input("QQ 邮箱: ").strip(),
-        "auth_code": input("授权码: ").strip(),
+        "agent_email": input("Agent 邮箱 (dmail 监控此邮箱): ").strip(),
+        "agent_auth_code": input("Agent 邮箱授权码: ").strip(),
+        "user_email": input("你的邮箱 (用于收发): ").strip(),
         "agent_cmd": input("Agent 命令 (如 claude -p \"{prompt}\"): ").strip()
             or 'claude -p "{prompt}"',
     }
@@ -51,14 +52,14 @@ def _body(msg):
 
 def send(cfg, to, subject, body):
     msg = MIMEText(body, "plain", "utf-8")
-    msg["From"], msg["To"], msg["Subject"] = cfg["email"], to, subject
+    msg["From"], msg["To"], msg["Subject"] = cfg["agent_email"], to, subject
     with smtplib.SMTP_SSL(*SMTP) as s:
-        s.login(cfg["email"], cfg["auth_code"])
-        s.sendmail(cfg["email"], [to], msg.as_string())
+        s.login(cfg["agent_email"], cfg["agent_auth_code"])
+        s.sendmail(cfg["agent_email"], [to], msg.as_string())
 
 def _imap(cfg):
     c = imaplib.IMAP4_SSL(*IMAP)
-    c.login(cfg["email"], cfg["auth_code"])
+    c.login(cfg["agent_email"], cfg["agent_auth_code"])
     return c
 
 def fetch(cfg, n=10):
@@ -150,7 +151,7 @@ def cli(cfg):
                 if m: print(f"  From: {m['from']}\n  Subject: {m['subject']}\n  Date: {m['date']}\n{'─'*40}\n{m['body']}")
                 else: print("  用法: read <uid>")
             elif cmd == "send":
-                to = input("  收件人: ").strip(); subj = input("  主题: ").strip()
+                to = input(f"  收件人 [{cfg['user_email']}]: ").strip() or cfg["user_email"]; subj = input("  主题: ").strip()
                 print("  正文 (单独一行 . 结束):"); lines = []
                 while True:
                     ln = input();
