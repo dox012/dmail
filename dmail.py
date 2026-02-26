@@ -4,10 +4,11 @@ from email.mime.text import MIMEText
 from email.header import decode_header
 from email.utils import parseaddr
 
+USER_EMAIL  = "user@qq.com"
 AGENT_EMAIL = "agent@qq.com"
-AGENT_AUTH  = "your_auth_code"
-AGENT_CMD   = 'claude -p "{prompt}" --continue'
-INTERVAL    = 20
+AGENT_AUTH  = "agent_auth_code"
+AGENT_CMD   = 'claude -p "{prompt}" --continue --dangerously-skip-permissions'
+INTERVAL    = 10
 
 SMTP = ("smtp.qq.com", 465)
 IMAP = ("imap.qq.com", 993)
@@ -87,6 +88,8 @@ if __name__ == "__main__":
                 seen.add(uid)
                 m = read(uid)
                 if not m: continue
+                if USER_EMAIL and m["from"] != USER_EMAIL:
+                    print(f"× 忽略 {m['from']}"); continue
                 print(f"← {m['from']}: {m['subject']}")
                 reply_body = ask_agent(m["body"])
                 subj = ("Re: " + m["subject"]) if not m["subject"].lower().startswith("re:") else m["subject"]
