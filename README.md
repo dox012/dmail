@@ -18,7 +18,7 @@ USER_EMAIL  = "user@qq.com"             # 你的邮箱（白名单，留空不�
 AGENT_EMAIL = "agent@qq.com"            # agent 邮箱
 AGENT_AUTH  = "agent_auth_code"         # 授权码
 AGENT_CMD   = 'claude -p "{prompt}" --continue --dangerously-skip-permissions'  # agent 命令（--continue 多轮对话）
-INTERVAL    = 10                        # 轮询间隔（秒）
+INTERVAL    = 6                        # 轮询间隔（秒）
 ```
 
 换 agent 只改 `AGENT_CMD`，如 `codex --quiet "{prompt}"`、`gemini "{prompt}"`。
