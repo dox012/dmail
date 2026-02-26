@@ -18,12 +18,16 @@ def _dec(s):
     return "".join(d.decode(c or "utf-8", errors="replace") if isinstance(d, bytes) else d for d, c in parts)
 
 def _body(msg):
+    raw = ""
     if msg.is_multipart():
         for p in msg.walk():
             if p.get_content_type() == "text/plain" and "attachment" not in str(p.get("Content-Disposition", "")):
-                return p.get_payload(decode=True).decode(p.get_content_charset() or "utf-8", errors="replace")
-    payload = msg.get_payload(decode=True)
-    return payload.decode(msg.get_content_charset() or "utf-8", errors="replace") if payload else ""
+                raw = p.get_payload(decode=True).decode(p.get_content_charset() or "utf-8", errors="replace")
+                break
+    else:
+        payload = msg.get_payload(decode=True)
+        raw = payload.decode(msg.get_content_charset() or "utf-8", errors="replace") if payload else ""
+    return raw.split('---原始邮件---')[0].replace('&nbsp;', ' ').strip()
 
 def _imap():
     c = imaplib.IMAP4_SSL(*IMAP)
@@ -31,6 +35,13 @@ def _imap():
     return c
 
 def send(to, subject, body):
+    msg = MIMEText(body, "plain", "utf-8")
+    msg["From"], msg["To"], msg["Subject"] = AGENT_EMAIL, to, subject
+    with smtplib.SMTP_SSL(*SMTP) as s:
+        s.login(AGENT_EMAIL, AGENT_AUTH)
+        s.sendmail(AGENT_EMAIL, [to], msg.as_string())
+
+def read(uid):
     c = _imap(); c.select("INBOX", readonly=True)
     _, d = c.uid("fetch", uid.encode(), "(RFC822)")
     c.logout()
@@ -57,7 +68,15 @@ def ask_agent(prompt):
         proc.wait()
         raise
 
+def mark_all_seen():
+    c = _imap(); c.select("INBOX")
+    _, data = c.search(None, "UNSEEN")
+    for mid in data[0].split():
+        c.store(mid, '+FLAGS', '\\Seen')
+    c.logout()
+
 if __name__ == "__main__":
+    mark_all_seen()
     print(f"dmail | 每 {INTERVAL}s 轮询 | Ctrl+C 退出")
     while True:
         try:
