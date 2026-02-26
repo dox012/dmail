@@ -6,8 +6,8 @@ from email.utils import parseaddr
 
 AGENT_EMAIL = "agent@qq.com"
 AGENT_AUTH  = "your_auth_code"
-AGENT_CMD   = 'claude -p "{prompt}"'
-INTERVAL    = 30
+AGENT_CMD   = 'claude -p "{prompt}" --continue'
+INTERVAL    = 20
 
 SMTP = ("smtp.qq.com", 465)
 IMAP = ("imap.qq.com", 993)
@@ -42,8 +42,9 @@ def send(to, subject, body):
         s.sendmail(AGENT_EMAIL, [to], msg.as_string())
 
 def read(uid):
-    c = _imap(); c.select("INBOX", readonly=True)
+    c = _imap(); c.select("INBOX")
     _, d = c.uid("fetch", uid.encode(), "(RFC822)")
+    c.uid("store", uid.encode(), '+FLAGS', '\\Seen')
     c.logout()
     if d[0] is None: return None
     m = email.message_from_bytes(d[0][1])
@@ -59,7 +60,7 @@ def get_unseen():
 
 def ask_agent(prompt):
     cmd = AGENT_CMD.replace("{prompt}", prompt.replace('"', '\\"'))
-    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
     try:
         out, err = proc.communicate(timeout=300)
         return out.strip() or err.strip() or "(agent 无响应)"
@@ -77,10 +78,13 @@ def mark_all_seen():
 
 if __name__ == "__main__":
     mark_all_seen()
+    seen = set()
     print(f"dmail | 每 {INTERVAL}s 轮询 | Ctrl+C 退出")
     while True:
         try:
             for uid in get_unseen():
+                if uid in seen: continue
+                seen.add(uid)
                 m = read(uid)
                 if not m: continue
                 print(f"← {m['from']}: {m['subject']}")
