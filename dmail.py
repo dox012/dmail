@@ -59,9 +59,8 @@ def get_unseen():
     uids = data[0].split(); c.logout()
     return [u.decode() for u in uids]
 
-def ask_agent(prompt, new_session=False):
+def ask_agent(prompt):
     cmd = AGENT_CMD.replace("{prompt}", prompt.replace('"', '\\"'))
-    if new_session: cmd = cmd.replace("--continue", "")
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
     try:
         out, err = proc.communicate(timeout=300)
@@ -85,12 +84,7 @@ if __name__ == "__main__":
                     print(f"× 忽略 {m['from']}"); continue
                 print(f"← {m['from']}: {m['subject']}")
                 print(f"  内容: {m['body'][:200]}")
-                body = m["body"].strip()
-                if body == "/clear":
-                    ask_agent("hi", new_session=True)
-                    reply_body = "已清空上下文"
-                else:
-                    reply_body = ask_agent(body)
+                reply_body = ask_agent(m["body"])
                 subj = ("Re: " + m["subject"]) if not m["subject"].lower().startswith("re:") else m["subject"]
                 send(m["from"], subj, reply_body)
                 print(f"→ 已回复 {m['from']}")
