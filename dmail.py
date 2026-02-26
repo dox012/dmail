@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
-"""dmail - 极简邮件聊天系统，把一切托管给 agent"""
-
 import time, subprocess
 import smtplib, imaplib, email
 from email.mime.text import MIMEText
 from email.header import decode_header
 from email.utils import parseaddr
 
-# ── 配置（直接改这里）─────────────────────────────────────
 AGENT_EMAIL = "agent@qq.com"
 AGENT_AUTH  = "your_auth_code"
 AGENT_CMD   = 'claude -p "{prompt}"'
@@ -15,8 +11,6 @@ INTERVAL    = 30
 
 SMTP = ("smtp.qq.com", 465)
 IMAP = ("imap.qq.com", 993)
-
-# ── 邮件工具 ────────────────────────────────────────────
 
 def _dec(s):
     if not s: return ""
@@ -52,8 +46,6 @@ def get_unseen():
     uids = data[0].split(); c.logout()
     return [u.decode() for u in uids]
 
-# ── Agent ─────────────────────────────────────────────
-
 def ask_agent(prompt):
     cmd = AGENT_CMD.replace("{prompt}", prompt.replace('"', '\\"'))
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -65,11 +57,8 @@ def ask_agent(prompt):
         proc.wait()
         raise
 
-# ── 入口 ──────────────────────────────────────────────
-
 if __name__ == "__main__":
     print(f"dmail | 每 {INTERVAL}s 轮询 | Ctrl+C 退出")
-    print(f"agent: {AGENT_CMD}\n")
     while True:
         try:
             for uid in get_unseen():
