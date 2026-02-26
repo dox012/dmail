@@ -56,8 +56,14 @@ def get_unseen():
 
 def ask_agent(prompt):
     cmd = AGENT_CMD.replace("{prompt}", prompt.replace('"', '\\"'))
-    r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
-    return r.stdout.strip() or r.stderr.strip() or "(agent 无响应)"
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        out, err = proc.communicate(timeout=300)
+        return out.strip() or err.strip() or "(agent 无响应)"
+    except (KeyboardInterrupt, subprocess.TimeoutExpired):
+        proc.kill()
+        proc.wait()
+        raise
 
 # ── 入口 ──────────────────────────────────────────────
 
