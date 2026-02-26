@@ -10,7 +10,6 @@ from email.utils import parseaddr
 # ── 配置（直接改这里）─────────────────────────────────────
 AGENT_EMAIL = "agent@qq.com"
 AGENT_AUTH  = "your_auth_code"
-USER_EMAIL  = "you@qq.com"
 AGENT_CMD   = 'claude -p "{prompt}"'
 
 SMTP = ("smtp.qq.com", 465)
@@ -131,7 +130,7 @@ def cli():
                 if m: print(f"  From: {m['from']}\n  Subject: {m['subject']}\n  Date: {m['date']}\n{'─'*40}\n{m['body']}")
                 else: print("  邮件不存在")
             elif cmd == "send":
-                to = input(f"  收件人 [{USER_EMAIL}]: ").strip() or USER_EMAIL
+                to = input("  收件人: ").strip()
                 subj = input("  主题: ").strip()
                 print("  正文 (单独一行 . 结束):"); lines = []
                 while True:
