@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """dmail - 极简邮件聊天系统，把一切托管给 agent"""
 
-import sys, time, subprocess
+import time, subprocess
 import smtplib, imaplib, email
 from email.mime.text import MIMEText
 from email.header import decode_header
@@ -11,6 +11,7 @@ from email.utils import parseaddr
 AGENT_EMAIL = "agent@qq.com"
 AGENT_AUTH  = "your_auth_code"
 AGENT_CMD   = 'claude -p "{prompt}"'
+INTERVAL    = 30
 
 SMTP = ("smtp.qq.com", 465)
 IMAP = ("imap.qq.com", 993)
@@ -61,8 +62,7 @@ def ask_agent(prompt):
 # ── 入口 ──────────────────────────────────────────────
 
 if __name__ == "__main__":
-    interval = int(sys.argv[1]) if len(sys.argv) > 1 else 30
-    print(f"dmail | 每 {interval}s 轮询 | Ctrl+C 退出")
+    print(f"dmail | 每 {INTERVAL}s 轮询 | Ctrl+C 退出")
     print(f"agent: {AGENT_CMD}\n")
     while True:
         try:
@@ -74,8 +74,8 @@ if __name__ == "__main__":
                 subj = ("Re: " + m["subject"]) if not m["subject"].lower().startswith("re:") else m["subject"]
                 send(m["from"], subj, reply_body)
                 print(f"→ 已回复 {m['from']}")
-            time.sleep(interval)
+            time.sleep(INTERVAL)
         except KeyboardInterrupt:
             print("\n已停止"); break
         except Exception as e:
-            print(f"错误: {e}"); time.sleep(interval)
+            print(f"错误: {e}"); time.sleep(INTERVAL)
