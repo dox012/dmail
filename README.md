@@ -1,49 +1,24 @@
 # dmail
 
-极简邮件聊天系统 — 197 行 Python，零依赖，把一切托管给 agent。
+87 行 Python，零依赖。给邮箱发消息，agent 自动回复。
 
-通过 QQ 邮箱 SMTP/IMAP 收发邮件，接入任意 agent CLI（Claude、Codex、Ollama...）自动回复。
+## 用法
 
-## 快速开始
+改 `dmail.py` 顶部配置，然后：
 
 ```bash
 python dmail.py
 ```
 
-首次运行会引导配置 QQ 邮箱、授权码和 agent 命令，保存到 `config.json`。
-
-## 使用
-
-```bash
-python dmail.py            # 交互式 CLI
-python dmail.py serve      # 自动轮询，agent 回复未读邮件
-python dmail.py serve 60   # 自定义轮询间隔（秒）
-```
-
-CLI 命令：
-
-```
-list [n]      最近 n 封邮件
-read <uid>    读取邮件
-send          发送邮件
-reply <uid>   手动回复
-agent <uid>   用 agent 回复（发送前确认）
-serve [sec]   进入自动轮询模式
-```
-
 ## 配置
 
-`config.json` 示例：
-
-```json
-{
-  "agent_email": "agent的QQ邮箱",
-  "agent_auth_code": "agent邮箱授权码",
-  "user_email": "你的邮箱",
-  "agent_cmd": "claude -p \"{prompt}\""
-}
+```python
+AGENT_EMAIL = "agent@qq.com"        # agent 邮箱
+AGENT_AUTH  = "your_auth_code"      # 授权码
+AGENT_CMD   = 'claude -p "{prompt}"'# agent 命令
+INTERVAL    = 30                    # 轮询间隔（秒）
 ```
 
-换 agent 只改 `agent_cmd`，比如 `codex --quiet "{prompt}"` 或 `ollama run llama3 "{prompt}"`。
+换 agent 只改 `AGENT_CMD`，如 `codex --quiet "{prompt}"`、`ollama run llama3 "{prompt}"`。
 
-授权码获取：QQ邮箱 → 设置 → 账户 → 开启 IMAP/SMTP 服务 → 生成授权码。
+授权码：QQ邮箱 → 设置 → 账户 → 开启 IMAP/SMTP → 生成授权码。
