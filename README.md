@@ -20,6 +20,6 @@ AGENT_CMD   = 'claude -p "{prompt}"'# agent 命令
 INTERVAL    = 30                    # 轮询间隔（秒）
 ```
 
-换 agent 只改 `AGENT_CMD`，如 `codex --quiet "{prompt}"`、`ollama run llama3 "{prompt}"`。
+换 agent 只改 `AGENT_CMD`，如 `codex --quiet "{prompt}"`、`gemini "{prompt}"`。
 
 授权码：QQ邮箱 → 设置 → 账户 → 开启 IMAP/SMTP → 生成授权码。
