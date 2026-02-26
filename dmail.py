@@ -8,7 +8,7 @@ USER_EMAIL  = "user@qq.com"
 AGENT_EMAIL = "agent@qq.com"
 AGENT_AUTH  = "agent_auth_code"
 AGENT_CMD   = 'claude -p "{prompt}" --continue --dangerously-skip-permissions'
-INTERVAL    = 10
+INTERVAL    = 6
 
 SMTP = ("smtp.qq.com", 465)
 IMAP = ("imap.qq.com", 993)
@@ -51,7 +51,7 @@ def read(uid):
     m = email.message_from_bytes(d[0][1])
     _, addr = parseaddr(_dec(m.get("From", "")))
     return {"uid": uid, "from": addr, "subject": _dec(m.get("Subject", "")),
-            "date": _dec(m.get("Date", "")), "body": _body(m)}
+            "body": _body(m)}
 
 def get_unseen():
     c = _imap(); c.select("INBOX")
@@ -59,8 +59,9 @@ def get_unseen():
     uids = data[0].split(); c.logout()
     return [u.decode() for u in uids]
 
-def ask_agent(prompt):
+def ask_agent(prompt, new_session=False):
     cmd = AGENT_CMD.replace("{prompt}", prompt.replace('"', '\\"'))
+    if new_session: cmd = cmd.replace("--continue", "")
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
     try:
         out, err = proc.communicate(timeout=300)
@@ -70,16 +71,8 @@ def ask_agent(prompt):
         proc.wait()
         raise
 
-def mark_all_seen():
-    c = _imap(); c.select("INBOX")
-    _, data = c.search(None, "UNSEEN")
-    for mid in data[0].split():
-        c.store(mid, '+FLAGS', '\\Seen')
-    c.logout()
-
 if __name__ == "__main__":
-    mark_all_seen()
-    seen = set()
+    seen = set(get_unseen())
     print(f"dmail | 每 {INTERVAL}s 轮询 | Ctrl+C 退出")
     while True:
         try:
@@ -91,7 +84,13 @@ if __name__ == "__main__":
                 if USER_EMAIL and m["from"] != USER_EMAIL:
                     print(f"× 忽略 {m['from']}"); continue
                 print(f"← {m['from']}: {m['subject']}")
-                reply_body = ask_agent(m["body"])
+                print(f"  内容: {m['body'][:200]}")
+                body = m["body"].strip()
+                if body == "/clear":
+                    ask_agent("hi", new_session=True)
+                    reply_body = "已清空上下文"
+                else:
+                    reply_body = ask_agent(body)
                 subj = ("Re: " + m["subject"]) if not m["subject"].lower().startswith("re:") else m["subject"]
                 send(m["from"], subj, reply_body)
                 print(f"→ 已回复 {m['from']}")
