@@ -36,28 +36,6 @@ def _imap():
     return c
 
 def send(to, subject, body):
-    msg = MIMEText(body, "plain", "utf-8")
-    msg["From"], msg["To"], msg["Subject"] = AGENT_EMAIL, to, subject
-    with smtplib.SMTP_SSL(*SMTP) as s:
-        s.login(AGENT_EMAIL, AGENT_AUTH)
-        s.sendmail(AGENT_EMAIL, [to], msg.as_string())
-
-def fetch(n=10):
-    c = _imap(); c.select("INBOX", readonly=True)
-    _, data = c.uid("search", None, "ALL")
-    uids = data[0].split()
-    if not uids: c.logout(); return []
-    results = []
-    for uid in reversed(uids[-n:]):
-        _, d = c.uid("fetch", uid, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])")
-        if d[0] is None: continue
-        m = email.message_from_bytes(d[0][1])
-        _, addr = parseaddr(_dec(m.get("From", "")))
-        results.append({"uid": uid.decode(), "from": addr, "subject": _dec(m.get("Subject", "")), "date": _dec(m.get("Date", ""))})
-    c.logout()
-    return results
-
-def read(uid):
     c = _imap(); c.select("INBOX", readonly=True)
     _, d = c.uid("fetch", uid.encode(), "(RFC822)")
     c.logout()
@@ -80,10 +58,11 @@ def ask_agent(prompt):
     r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
     return r.stdout.strip() or r.stderr.strip() or "(agent 无响应)"
 
-# ── Serve 模式 ────────────────────────────────────────
+# ── 入口 ──────────────────────────────────────────────
 
-def serve(interval=30):
-    print(f"dmail serve | 每 {interval}s 轮询 | Ctrl+C 退出")
+if __name__ == "__main__":
+    interval = int(sys.argv[1]) if len(sys.argv) > 1 else 30
+    print(f"dmail | 每 {interval}s 轮询 | Ctrl+C 退出")
     print(f"agent: {AGENT_CMD}\n")
     while True:
         try:
@@ -100,74 +79,3 @@ def serve(interval=30):
             print("\n已停止"); break
         except Exception as e:
             print(f"错误: {e}"); time.sleep(interval)
-
-# ── CLI ───────────────────────────────────────────────
-
-HELP = """命令:
-  list [n]      最近 n 封邮件
-  read <uid>    读取邮件
-  send          发送邮件
-  reply <uid>   手动回复
-  agent <uid>   用 agent 回复
-  serve [sec]   自动轮询回复模式
-  help / quit"""
-
-def cli():
-    print("dmail cli | 输入 help 查看命令\n")
-    while True:
-        try:
-            raw = input("dmail> ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\n再见"); break
-        if not raw: continue
-        parts = raw.split(); cmd, args = parts[0].lower(), parts[1:]
-        try:
-            if cmd == "list":
-                for m in fetch(int(args[0]) if args else 10):
-                    print(f"  {m['uid']:<8} {m['from']:<26} {m['subject'][:32]}")
-            elif cmd == "read" and args:
-                m = read(args[0])
-                if m: print(f"  From: {m['from']}\n  Subject: {m['subject']}\n  Date: {m['date']}\n{'─'*40}\n{m['body']}")
-                else: print("  邮件不存在")
-            elif cmd == "send":
-                to = input("  收件人: ").strip()
-                subj = input("  主题: ").strip()
-                print("  正文 (单独一行 . 结束):"); lines = []
-                while True:
-                    ln = input()
-                    if ln.strip() == ".": break
-                    lines.append(ln)
-                send(to, subj, "\n".join(lines)); print("  已发送")
-            elif cmd == "reply" and args:
-                m = read(args[0])
-                if not m: print("  邮件不存在"); continue
-                print(f"  回复 {m['from']}，正文 (单独一行 . 结束):"); lines = []
-                while True:
-                    ln = input()
-                    if ln.strip() == ".": break
-                    lines.append(ln)
-                subj = ("Re: " + m["subject"]) if not m["subject"].lower().startswith("re:") else m["subject"]
-                send(m["from"], subj, "\n".join(lines)); print("  已回复")
-            elif cmd == "agent" and args:
-                m = read(args[0])
-                if not m: print("  邮件不存在"); continue
-                print(f"  调用 agent ..."); reply_body = ask_agent(m["body"])
-                print(f"  agent:\n{reply_body}\n")
-                if input("  发送? (y/n): ").strip().lower() == "y":
-                    subj = ("Re: " + m["subject"]) if not m["subject"].lower().startswith("re:") else m["subject"]
-                    send(m["from"], subj, reply_body); print("  已发送")
-            elif cmd == "serve":
-                serve(int(args[0]) if args else 30)
-            elif cmd == "help": print(HELP)
-            elif cmd in ("quit", "exit", "q"): print("再见"); break
-            else: print("  未知命令，输入 help")
-        except Exception as e:
-            print(f"  错误: {e}")
-
-# ── 入口 ──────────────────────────────────────────────
-
-if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "serve":
-        serve(int(sys.argv[2]) if len(sys.argv) > 2 else 30)
-    else:
-        cli()
