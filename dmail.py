@@ -1,3 +1,6 @@
+# Copyright (c) 2026 dox012
+# Licensed under the MIT License.
+
 import time, subprocess
 import smtplib, imaplib, email
 from email.mime.text import MIMEText
