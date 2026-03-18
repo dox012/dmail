@@ -1,5 +1,19 @@
 # dmail
 
+<table>
+  <tr>
+    <td><img src="assets/1.jpg" alt="dmail screenshot 1" width="260"></td>
+    <td><img src="assets/2.jpg" alt="dmail screenshot 2" width="260"></td>
+    <td><img src="assets/3.jpg" alt="dmail screenshot 3" width="260"></td>
+  </tr>
+  <tr>
+    <td><img src="assets/4.jpg" alt="dmail screenshot 4" width="260"></td>
+    <td><img src="assets/5.jpg" alt="dmail screenshot 5" width="260"></td>
+    <td><img src="assets/6.jpg" alt="dmail screenshot 6" width="260"></td>
+  </tr>
+</table>
+
+
 极简邮件聊天系统，把一切额外功能托管给 agent。
 100 行 Python 实现，给邮箱发消息，agent 开始干活。
 
